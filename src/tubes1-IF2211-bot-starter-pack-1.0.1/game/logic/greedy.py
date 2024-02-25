@@ -11,28 +11,22 @@ class GreedyLogic(BaseLogic):
         self.directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]
         self.goal_position: Optional[Position] = None
         self.current_direction = 0
+        self.diamond = []
 
         # temporary
         self.moveTo = (0, 0)
 
     def next_move(self, board_bot: GameObject, board: Board):
         props = board_bot.properties
+        diamonds = board.diamonds()
+        
         # Analyze new state
         if props.diamonds == 5:
             # Move to base
             base = board_bot.properties.base
             self.goal_position = base
         else:
-            # Around the board
-            if (board_bot.position.x, board_bot.position.y) == (0,0):
-                self.moveTo = (0, board.height - 1)
-            elif (board_bot.position.x, board_bot.position.y) == (10, board.height - 1):
-                self.moveTo = (board.width - 1, board.height - 1)
-            elif (board_bot.position.x, board_bot.position.y) == (board.width - 1, board.height - 1):
-                self.moveTo = (board.width - 1, 0)
-            elif (board_bot.position.x, board_bot.position.y) == (board.width - 1, 0):
-                self.moveTo = (0, 0)
-            self.goal_position = Position(self.moveTo[0], self.moveTo[1])
+            self.goal_position = self.find_nearest_diamond(board_bot, diamonds)
             
         current_position = board_bot.position
         if self.goal_position:
@@ -52,3 +46,14 @@ class GreedyLogic(BaseLogic):
                 self.directions
             )
         return delta_x, delta_y
+    
+    def find_nearest_diamond(self, board_bot: GameObject, diamonds) -> Optional[Position]:
+        current_position = board_bot.position
+        min_distance = float("inf")
+        nearest_diamond = None
+        for diamond in diamonds:
+            distance = abs(diamond.position.x - current_position.x) + abs(diamond.position.y - current_position.y)
+            if distance < min_distance:
+                min_distance = distance
+                nearest_diamond = diamond.position
+        return nearest_diamond
