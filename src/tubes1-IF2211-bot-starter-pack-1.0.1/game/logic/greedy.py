@@ -24,10 +24,11 @@ class GreedyDiamondLogic(BaseLogic):
         self.teleporter = [d for d in self.board.game_objects if d.type == "TeleportGameObject"]
         self.redButton = [d for d in self.board.game_objects if d.type == "DiamondButtonGameObject"]
 
-        # print(self.static_goals)
-        # print(self.static_temp_goals)
+        # Remove goal if already reached
         if (self.board_bot.position in self.static_goals):
             self.static_goals.remove(self.board_bot.position)
+
+        # Remove temp goal if already reached
         if (self.board_bot.position == self.static_temp_goals):
             self.static_temp_goals = None
 
@@ -36,10 +37,12 @@ class GreedyDiamondLogic(BaseLogic):
             # Move to base
             base = board_bot.properties.base
             self.goal_position = base
+
+            # Reset static goals
             self.static_goals = []
-        elif self.static_temp_goals:
+        elif self.static_temp_goals: # If there is a temp goal, use it
             self.goal_position = self.static_temp_goals
-        else:
+        else: # If there is no temp goal, find the best block
             if (len(self.static_goals) == 0):
                 self.find_best_block()
             self.goal_position = self.find_nearest_goal()
@@ -53,15 +56,31 @@ class GreedyDiamondLogic(BaseLogic):
                 self.goal_position.x,
                 self.goal_position.y,
             )
+
+            # Check if there is a teleporter on the path
             if (not self.static_temp_goals):
-                self.teleporter_on_the_path(
+                self.obstacle_on_path(
+                    'teleporter',
                     current_position.x,
                     current_position.y,
                     self.goal_position.x,
                     self.goal_position.y,
                 )
+            
+            # Check if there is a red button on the path
+            if (not self.static_temp_goals):
+                self.obstacle_on_path(
+                    'redButton',
+                    current_position.x,
+                    current_position.y,
+                    self.goal_position.x,
+                    self.goal_position.y,
+                )
+
+            # Check if there is a red diamond on the path
             if (props.diamonds == 4):
-                self.red_diamond_on_the_path(
+                self.obstacle_on_path(
+                    'redDiamond',
                     current_position.x,
                     current_position.y,
                     self.goal_position.x,
@@ -80,8 +99,11 @@ class GreedyDiamondLogic(BaseLogic):
 
     def find_nearest_goal(self):
         current_position = self.board_bot.position
+
         nearest_goal = None
         nearest_distance = float("inf")
+
+        # Find the nearest goal
         for goal in self.static_goals:
             distance = abs(current_position.x - goal.x) + abs(current_position.y - goal.y)
             if distance < nearest_distance:
@@ -93,21 +115,31 @@ class GreedyDiamondLogic(BaseLogic):
         self.find_best_block_around()
 
     def find_best_block_around(self):
-        # y = i
-        # x = j
         current_position = self.board_bot.position
+
+        # Block size
         blockH = 3
         blockW = 3
-        topLeft = (current_position.y - blockH//2 - blockH, current_position.x - blockW//2 - blockW) # (y,x)
+
+        # Top left position of the current block
+        topLeft = (current_position.y - blockH//2 - blockH, current_position.x - blockW//2 - blockW)
+
+        # Block around value and diamonds
         blockAroundValue = [[0 for i in range(3)] for j in range(3)]
         blockAroundDiamonds = [[[] for i in range(3)] for j in range(3)]
+
         bestValue = 0
         bestBlockIndex = (0,0)
+
+        #TODO : Handle jumlah diamond sekarang, cari yang lebih dari maks - current, tapi yang paling minimal
         for diamond in self.diamonds:
+
+            # Skip red diamond if already have 4 diamonds
             if (diamond.properties.points == 2 and self.board_bot.properties.diamonds == 4):
                 continue
+
+            # Check if the diamond is in the current block
             if diamond.position.x >= topLeft[1] and diamond.position.x < topLeft[1] + blockW*3 and diamond.position.y >= topLeft[0] and diamond.position.y < topLeft[0] + blockH*3:
-                # print(diamond.position)
                 blockAroundValue[(diamond.position.y - topLeft[0])//blockH][(diamond.position.x - topLeft[1])//blockW] += diamond.properties.points / (abs(current_position.x - diamond.position.x) + abs(current_position.y - diamond.position.y))
                 blockAroundDiamonds[(diamond.position.y - topLeft[0])//blockH][(diamond.position.x - topLeft[1])//blockW].append(diamond.position)
                 tempIndex = ((diamond.position.y - topLeft[0])//blockH, (diamond.position.x - topLeft[1])//blockW)
@@ -141,11 +173,17 @@ class GreedyDiamondLogic(BaseLogic):
         else:
             # print("GAKETEMU LAGI")
             self.static_goals.append(self.redButton[0].position)
+    
+    def obstacle_on_path(self, type, current_x, current_y, dest_x, dest_y):
+        if type == 'teleporter':
+            object = self.teleporter
+        elif type == 'redDiamond':
+            object = [d for d in self.diamonds if d.properties.points == 2]
+        elif type == 'redButton':
+            object = self.redButton
         
-        
-    def teleporter_on_the_path(self, current_x, current_y, dest_x, dest_y):
-        for t in self.teleporter:
-            # Kondisi saat teleporter sejajar dengan destinasi dalam sumbu y dan berada pada jalur current->dest
+        for t in object:
+            # Kondisi saat redDiamond sejajar dengan destinasi dalam sumbu y dan berada pada jalur current->dest
             if t.position.x == dest_x and (dest_y < t.position.y <= current_y or current_y <= t.position.y < dest_y):
 
                 # Kondisi saat current tidak sejajar dengan destinasi pada sumbu y
@@ -161,7 +199,7 @@ class GreedyDiamondLogic(BaseLogic):
                         self.goal_position = Position(dest_y,dest_x-1)
                 self.static_temp_goals = Position(self.goal_position.y,self.goal_position.x)
 
-            # Kondisi saat teleporter sejajar dengan destinasi dalam sumbu x dan berada pada jalur current->dest (Tidak akan pernah terjadi)
+            # Kondisi saat redDiamond sejajar dengan destinasi dalam sumbu x dan berada pada jalur current->dest (Tidak akan pernah terjadi)
             elif t.position.y == dest_y and (dest_x < t.position.x <= current_x or current_x <= t.position.x < dest_x):
 
                 # Kondisi saat current tidak sejajar dengan destinasi pada sumbu x
@@ -176,7 +214,7 @@ class GreedyDiamondLogic(BaseLogic):
                     else:
                         self.goal_position = Position(dest_y-1,dest_x)
                         
-            # Kondisi saat teleporter sejajar dengan current dalam sumbu x dan berada pada jalur current->dest
+            # Kondisi saat redDiamond sejajar dengan current dalam sumbu x dan berada pada jalur current->dest
             elif t.position.y == current_y and (dest_x < t.position.x <= current_x or current_x <= t.position.x < dest_x): 
 
                 # Kondisi saat current tidak sejajar dengan destinasi pada sumbu x
@@ -192,71 +230,14 @@ class GreedyDiamondLogic(BaseLogic):
                         self.goal_position = Position(current_y-1,current_x)
                 self.static_temp_goals = Position(self.goal_position.y,self.goal_position.x)
 
-            # Kondisi saat teleporter sejajar dengan current dalam sumbu y dan berada pada jalur current->dest (TIDAK TERPAKAI KARENA TIDAK AKAN PERNAH TERJADI)
+            # Kondisi saat redDiamond sejajar dengan current dalam sumbu y dan berada pada jalur current->dest (TIDAK TERPAKAI KARENA TIDAK AKAN PERNAH TERJADI)
             elif t.position.x == current_x and (dest_y < t.position.y <= current_y or current_y <= t.position.y < dest_y):
                 if (current_x == 0):
                     self.goal_position = Position(dest_y,current_x+1)
                 else:
                     self.goal_position = Position(dest_y,current_x-1)
                 self.static_temp_goals = Position(self.goal_position.y,self.goal_position.x)
-
-    def red_diamond_on_the_path(self, current_x, current_y, dest_x, dest_y):
-        for t in self.diamonds:
-            if (t.properties.points == 2 and self.board_bot.properties.diamonds == 4):
-                # Kondisi saat redDiamond sejajar dengan destinasi dalam sumbu y dan berada pada jalur current->dest
-                if t.position.x == dest_x and (dest_y < t.position.y <= current_y or current_y <= t.position.y < dest_y):
-
-                    # Kondisi saat current tidak sejajar dengan destinasi pada sumbu y
-                    if (dest_x != current_x):
-                        self.goal_position = Position(dest_y,dest_x-1) if dest_x > current_x else Position(dest_y,dest_x+1)
-
-                    # Kondisi saat current sejajar dengan destinasi pada sumbu y
-                    else:
-                        # Handle kalo dipinggir kiri/kanan
-                        if (dest_x == 0):
-                            self.goal_position = Position(dest_y,dest_x+1)
-                        else:
-                            self.goal_position = Position(dest_y,dest_x-1)
-                    self.static_temp_goals = Position(self.goal_position.y,self.goal_position.x)
-
-                # Kondisi saat redDiamond sejajar dengan destinasi dalam sumbu x dan berada pada jalur current->dest (Tidak akan pernah terjadi)
-                elif t.position.y == dest_y and (dest_x < t.position.x <= current_x or current_x <= t.position.x < dest_x):
-
-                    # Kondisi saat current tidak sejajar dengan destinasi pada sumbu x
-                    if (dest_y != current_y):
-                        self.goal_position = Position(dest_y-1,dest_x) if dest_y > current_y else Position(dest_y+1,dest_x)
-
-                    # Kondisi saat current sejajar dengan destinasi pada sumbu x
-                    else:
-                        # Handle kalo dipinggir atas/bawah
-                        if (dest_y == 0):
-                            self.goal_position = Position(dest_y+1,dest_x)
-                        else:
-                            self.goal_position = Position(dest_y-1,dest_x)
-                            
-                # Kondisi saat redDiamond sejajar dengan current dalam sumbu x dan berada pada jalur current->dest
-                elif t.position.y == current_y and (dest_x < t.position.x <= current_x or current_x <= t.position.x < dest_x): 
-
-                    # Kondisi saat current tidak sejajar dengan destinasi pada sumbu x
-                    if (dest_y != current_y):
-                        self.goal_position = Position(dest_y,current_x)
-
-                    # Kondisi saat current sejajar dengan destinasi pada sumbu y
-                    else:
-                        # Handle kalo dipinggir kiri/kanan
-                        if (current_y == 0):
-                            self.goal_position = Position(current_y+1,current_x)
-                        else:
-                            self.goal_position = Position(current_y-1,current_x)
-                    self.static_temp_goals = Position(self.goal_position.y,self.goal_position.x)
-
-                # Kondisi saat redDiamond sejajar dengan current dalam sumbu y dan berada pada jalur current->dest (TIDAK TERPAKAI KARENA TIDAK AKAN PERNAH TERJADI)
-                elif t.position.x == current_x and (dest_y < t.position.y <= current_y or current_y <= t.position.y < dest_y):
-                    if (current_x == 0):
-                        self.goal_position = Position(dest_y,current_x+1)
-                    else:
-                        self.goal_position = Position(dest_y,current_x-1)
-                    self.static_temp_goals = Position(self.goal_position.y,self.goal_position.x)
-            
-            
+        
 # TODO: HANDLE SAME BEST VALUE (PICK NEAREST BLOCK)
+# TODO: HANDLE RED DIAMOND
+# TODO: refactor teleporter_on_the_path, red_diamond_on_the_path, add red_button_on_the_path
