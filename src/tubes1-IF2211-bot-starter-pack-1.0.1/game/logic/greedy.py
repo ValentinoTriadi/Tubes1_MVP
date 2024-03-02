@@ -95,9 +95,10 @@ class GreedyDiamondLogic(BaseLogic):
                 self.directions
             )
         return delta_x, delta_y
-    
 
+    # Find the nearest diamond in the static goals
     def find_nearest_goal(self):
+
         current_position = self.board_bot.position
 
         nearest_goal = None
@@ -140,13 +141,30 @@ class GreedyDiamondLogic(BaseLogic):
 
             # Check if the diamond is in the current block
             if diamond.position.x >= topLeft[1] and diamond.position.x < topLeft[1] + blockW*3 and diamond.position.y >= topLeft[0] and diamond.position.y < topLeft[0] + blockH*3:
-                blockAroundValue[(diamond.position.y - topLeft[0])//blockH][(diamond.position.x - topLeft[1])//blockW] += diamond.properties.points / (abs(current_position.x - diamond.position.x) + abs(current_position.y - diamond.position.y))
+                blockAroundValue[(diamond.position.y - topLeft[0])//blockH][(diamond.position.x - topLeft[1])//blockW] += diamond.properties.points
                 blockAroundDiamonds[(diamond.position.y - topLeft[0])//blockH][(diamond.position.x - topLeft[1])//blockW].append(diamond.position)
                 tempIndex = ((diamond.position.y - topLeft[0])//blockH, (diamond.position.x - topLeft[1])//blockW)
+
                 temp = blockAroundValue[tempIndex[0]][tempIndex[1]]
                 if (temp > bestValue):
                     bestValue = temp
-                    bestBlockIndex = (tempIndex[0],tempIndex[1])
+                #     bestBlockIndex = (tempIndex[0],tempIndex[1])
+
+        # Find minimum value with nearest distance
+        minimunDiamond = 5 - self.diamonds
+        score = - float("inf")
+        for i in range(3):
+            for j in range(3):
+                diamondValue = blockAroundValue[i][j] - minimunDiamond
+
+                blockMiddle = (topLeft[0] + blockH//2 + i * blockH, topLeft[1] + blockW//2 + j * blockW)
+
+                newScore = 1 / diamondValue * 1 / (abs(current_position.x - blockMiddle[1]) + abs(current_position.y - blockMiddle[0]))
+
+                if (newScore > score):
+                    score = newScore
+                    bestBlockIndex = (i,j)
+
         if (bestValue > 0):
             self.static_goals = blockAroundDiamonds[bestBlockIndex[0]][bestBlockIndex[1]]
         else:
@@ -154,12 +172,16 @@ class GreedyDiamondLogic(BaseLogic):
             self.find_best_block_map()
 
     def find_best_block_map(self):
+        current_position = self.board_bot.position
+
         blockW = self.board.width//3
         blockH = self.board.height//3
         blockAroundValue = [[0 for i in range(3)] for j in range(3)]
         blockAroundDiamonds = [[[] for i in range(3)] for j in range(3)]
         bestValue = 0
         bestBlockIndex = (0,0)
+
+        topLeft = (current_position.y - blockH//2 - blockH, current_position.x - blockW//2 - blockW)
         for diamond in self.diamonds:
             blockAroundValue[diamond.position.y//blockH][diamond.position.x//blockW] += diamond.properties.points
             blockAroundDiamonds[diamond.position.y//blockH][diamond.position.x//blockW].append(diamond.position)
@@ -167,7 +189,21 @@ class GreedyDiamondLogic(BaseLogic):
             temp = blockAroundValue[tempIndex[0]][tempIndex[1]]
             if (temp > bestValue):
                 bestValue = temp
-                bestBlockIndex = (tempIndex[0],tempIndex[1])
+        
+        minimunDiamond = 5 - self.diamonds
+        score = - float("inf")
+        for i in range(3):
+            for j in range(3):
+                diamondValue = blockAroundValue[i][j] - minimunDiamond
+
+                blockMiddle = (topLeft[0] + blockH//2 + i * blockH, topLeft[1] + blockW//2 + j * blockW)
+
+                newScore = 1 / diamondValue * 1 / (abs(current_position.x - blockMiddle[1]) + abs(current_position.y - blockMiddle[0]))
+
+                if (newScore > score):
+                    score = newScore
+                    bestBlockIndex = (i,j)
+
         if (bestValue > 0):
             self.static_goals = blockAroundDiamonds[bestBlockIndex[0]][bestBlockIndex[1]]
         else:
@@ -240,4 +276,4 @@ class GreedyDiamondLogic(BaseLogic):
         
 # TODO: HANDLE SAME BEST VALUE (PICK NEAREST BLOCK)
 # TODO: HANDLE RED DIAMOND
-# TODO: refactor teleporter_on_the_path, red_diamond_on_the_path, add red_button_on_the_path
+# TODO: bug sisa red diamond semua, tapi current sudah 4, jadi gak bisa ambil red diamond, langsung balik ke base
