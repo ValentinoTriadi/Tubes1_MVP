@@ -108,7 +108,7 @@ class GreedyDiamondLogic(BaseLogic):
                 continue
             if diamond.position.x >= topLeft[1] and diamond.position.x < topLeft[1] + blockW*3 and diamond.position.y >= topLeft[0] and diamond.position.y < topLeft[0] + blockH*3:
                 # print(diamond.position)
-                blockAroundValue[(diamond.position.y - topLeft[0])//blockH][(diamond.position.x - topLeft[1])//blockW] += diamond.properties.points
+                blockAroundValue[(diamond.position.y - topLeft[0])//blockH][(diamond.position.x - topLeft[1])//blockW] += diamond.properties.points / (abs(current_position.x - diamond.position.x) + abs(current_position.y - diamond.position.y))
                 blockAroundDiamonds[(diamond.position.y - topLeft[0])//blockH][(diamond.position.x - topLeft[1])//blockW].append(diamond.position)
                 tempIndex = ((diamond.position.y - topLeft[0])//blockH, (diamond.position.x - topLeft[1])//blockW)
                 temp = blockAroundValue[tempIndex[0]][tempIndex[1]]
