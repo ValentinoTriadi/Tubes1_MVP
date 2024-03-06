@@ -8,7 +8,7 @@ from game.board_handler import BoardHandler
 from game.api import Api
 
 
-class TacleLogic(BaseLogic):
+class TackleLogic(BaseLogic):
     static_targeted_bot: GameObject | None = None
 
     def __init__(self) -> None:
@@ -43,33 +43,30 @@ class TacleLogic(BaseLogic):
             # Move to base
             base = board_bot.properties.base
             self.goal_position = base
-            self.static_temp_goals = None
+
+            self.static_targeted_bot = None
+
         else:
             if len(self.bots) == 1:
                 self.goal_position = self.bases[0].position
                 if board_bot.position == self.bases[0].position:
-                    # kasus udah di base musuh, siap tacle
-                    self.goal_position = self.tacle_from_base(
+                    self.goal_position = self.tackle_from_base(
                         self.bots[0].position,
                         board_bot.position,
                     )
             elif len(self.bots) > 1:
-                # nyari bot musuh yang punya diamond >= 3
-                targeted_bot = self.find_bot_have_diamonds()
-                if targeted_bot != None:
-                    self.goal_position = targeted_bot.properties.base
-                    # next TODO = kalo bot musuh udah deket base, siap tacle
-                    if board_bot.position == targeted_bot.properties.base:
-                        self.goal_position = self.tacle_from_base(
-                            targeted_bot.position,
+                if self.static_targeted_bot is not None:
+                    self.goal_position = self.static_targeted_bot.properties.base
+                    if board_bot.position == self.static_targeted_bot.properties.base:
+                        self.goal_position = self.tackle_from_base(
+                            self.static_targeted_bot.position,
                             board_bot.position,
                         )
                 else:
-                    # TODO stay di middle
                     self.goal_position = self.find_middle_position()
                     if board_bot.position == self.goal_position:
-                        while not targeted_bot:
-                            sleep(0.1)
+                        while not self.static_targeted_bot:
+                            sleep(1)
                             self.board = BoardHandler(
                                 Api("http://localhost:3000/api")
                             ).get_board(self.board.id)
@@ -78,7 +75,9 @@ class TacleLogic(BaseLogic):
                                 for d in self.board.game_objects
                                 if d.type == "BotGameObject" and d.id != board_bot.id
                             ]
-                            targeted_bot = self.find_bot_have_diamonds()
+                            if self.find_bot_have_diamonds():
+                                self.static_targeted_bot = self.find_bot_have_diamonds()
+                        self.goal_position = self.static_targeted_bot.properties.base
 
         current_position = board_bot.position
         if self.goal_position:
@@ -98,14 +97,14 @@ class TacleLogic(BaseLogic):
             self.current_direction = (self.current_direction + 1) % len(self.directions)
         return delta_x, delta_y
 
-    def tacle_from_base(
-        self, enemy_position: Position, my_position: Position
+    def tackle_from_base(
+            self, enemy_position: Position, my_position: Position
     ) -> Position:
         while not (
-            (enemy_position.x - 1 and enemy_position.y == my_position.y)
-            or (enemy_position.x + 1 and enemy_position.y == my_position.y)
-            or (enemy_position.x and enemy_position.y - 1 == my_position.y)
-            or (enemy_position.x and enemy_position.y + 1 == my_position.y)
+                (enemy_position.x - 1 and enemy_position.y == my_position.y)
+                or (enemy_position.x + 1 and enemy_position.y == my_position.y)
+                or (enemy_position.x and enemy_position.y - 1 == my_position.y)
+                or (enemy_position.x and enemy_position.y + 1 == my_position.y)
         ):
             sleep(0.01)
             self.board = BoardHandler(Api("http://localhost:3000/api")).get_board(
@@ -138,8 +137,8 @@ class TacleLogic(BaseLogic):
     def find_middle_position(self) -> Position:
         # fungsi cari posisi tengah dari semua base musuh
         # ini kondisi saat musuh belom ada yang punya diamond > 3
-        avg_x = sum(base.position.x for base in self.bases) / len(self.bases)
-        avg_y = sum(base.position.y for base in self.bases) / len(self.bases)
+        avg_x = int(sum(base.position.x for base in self.bases) / len(self.bases))
+        avg_y = int(sum(base.position.y for base in self.bases) / len(self.bases))
         middle_position = Position(avg_x, avg_y)
         return middle_position
 
@@ -147,7 +146,7 @@ class TacleLogic(BaseLogic):
         nearest_base = self.bases[0].position
         for base in self.bases:
             if abs(base.position.x - position.x) + abs(
-                base.position.y - position.y
+                    base.position.y - position.y
             ) < abs(nearest_base.x - position.x) + abs(nearest_base.y - position.y):
                 nearest_base = base.position
 
