@@ -6,18 +6,20 @@ from game.api import Api
 from game.board_handler import BoardHandler
 from game.bot_handler import BotHandler
 from game.logic.random import RandomLogic
-from game.logic.greedy import GreedyLogic
 from game.util import *
 from game.logic.base import BaseLogic
-from game.logic.tacle import TacleLogic
+from game.logic.tackle import TackleLogic
+from game.logic.block import GreedyDiamondLogic
+from game.logic.direct import GreedyDiamondLogic
 
 init()
 BASE_URL = "http://localhost:3000/api"
-DEFAULT_BOARD_ID = 1
+DEFAULT_BOARD_ID = 4
 CONTROLLERS = {
     "Random": RandomLogic,
-    "Greedy": GreedyLogic,
-    "Tacle": TacleLogic,
+    "Block": GreedyDiamondLogic,
+    "Tackle": TackleLogic,
+    "Direct" : GreedyDiamondLogic,
 }
 
 ###############################################################################
@@ -163,7 +165,7 @@ if not current_board_id:
 #
 ###############################################################################
 board = board_handler.get_board(current_board_id)
-move_delay = board.minimum_delay_between_moves / 1000
+move_delay = board.minimum_delay_between_moves / 100
 
 ###############################################################################
 #
@@ -207,7 +209,7 @@ while True:
 
     # Don't spam the board more than it allows!
     # sleep(move_delay * time_factor)
-    sleep(1)
+    sleep(0.1)
 
 
 ###############################################################################

@@ -110,6 +110,7 @@ class GreedyDiamondLogic(BaseLogic):
             if distance < nearest_distance:
                 nearest_distance = distance
                 nearest_goal = goal
+
         return nearest_goal
     
     def find_best_block(self):
@@ -132,7 +133,7 @@ class GreedyDiamondLogic(BaseLogic):
         bestValue = 0
         bestBlockIndex = (0,0)
 
-        #TODO : Handle jumlah diamond sekarang, cari yang lebih dari maks - current, tapi yang paling minimal
+        # Count the value of the diamonds in the block
         for diamond in self.diamonds:
 
             # Skip red diamond if already have 4 diamonds
@@ -148,41 +149,70 @@ class GreedyDiamondLogic(BaseLogic):
                 temp = blockAroundValue[tempIndex[0]][tempIndex[1]]
                 if (temp > bestValue):
                     bestValue = temp
-                #     bestBlockIndex = (tempIndex[0],tempIndex[1])
-
-        # Find minimum value with nearest distance
-        minimunDiamond = 5 - self.diamonds
-        score = - float("inf")
+        
+        #No diamonds in blocks
+        if (bestValue == 0):
+            self.find_best_block_map()
+            return
+        
+        # Count most valuable block
+        minimunDiamond = 5 - self.board_bot.properties.diamonds
         for i in range(3):
             for j in range(3):
-                diamondValue = blockAroundValue[i][j] - minimunDiamond
+                #Score jarak hanya akan di berikan ke block yang memiliki diamond
+                if blockAroundValue[i][j] == 0:
+                    continue
 
-                blockMiddle = (topLeft[0] + blockH//2 + i * blockH, topLeft[1] + blockW//2 + j * blockW)
+                #Block yang memiliki diamond lebih dari 5 - current
+                if (blockAroundValue[i][j] < minimunDiamond):
+                    continue
 
-                newScore = 1 / diamondValue * 1 / (abs(current_position.x - blockMiddle[1]) + abs(current_position.y - blockMiddle[0]))
+                #Block yang memiliki diamond lebih dari best value akan dikurangi scorenya
+                #Alasannya ngambil diamond lebih banyak, sama aja ngambil diamond kurang
+                selisih = blockAroundValue[i][j] - minimunDiamond
+                blockAroundValue[i][j] -= selisih
 
-                if (newScore > score):
-                    score = newScore
+                #Block tengah
+                if ((i + j) == 2):
+                    blockAroundValue[i][j] += 6
+                #Block pojok
+                elif ( (i + j ) % 2 == 0):
+                    blockAroundValue[i][j] += 1
+                #Block kanan, kiri, atas, bawah    
+                else:
+                    blockAroundValue[i][j] += 3
+        
+        # Find best block
+        score = 0
+        for i in range(3):
+            for j in range(3):
+                if blockAroundValue[i][j] > score:
+                    score = blockAroundValue[i][j]
                     bestBlockIndex = (i,j)
 
-        if (bestValue > 0):
-            self.static_goals = blockAroundDiamonds[bestBlockIndex[0]][bestBlockIndex[1]]
-        else:
-            # print("GAKETEMU")
-            self.find_best_block_map()
-
+        self.static_goals = blockAroundDiamonds[bestBlockIndex[0]][bestBlockIndex[1]]
+    
     def find_best_block_map(self):
         current_position = self.board_bot.position
 
-        blockW = self.board.width//3
+        # Block size
         blockH = self.board.height//3
+        blockW = self.board.width//3
+
+        # Block around value and diamonds
         blockAroundValue = [[0 for i in range(3)] for j in range(3)]
         blockAroundDiamonds = [[[] for i in range(3)] for j in range(3)]
+
         bestValue = 0
         bestBlockIndex = (0,0)
 
+        # Count the value of the diamonds in the block
         topLeft = (current_position.y - blockH//2 - blockH, current_position.x - blockW//2 - blockW)
         for diamond in self.diamonds:
+            # Skip red diamond if already have 4 diamonds
+            if (diamond.properties.points == 2 and self.board_bot.properties.diamonds == 4):
+                continue
+            
             blockAroundValue[diamond.position.y//blockH][diamond.position.x//blockW] += diamond.properties.points
             blockAroundDiamonds[diamond.position.y//blockH][diamond.position.x//blockW].append(diamond.position)
             tempIndex = (diamond.position.y//blockH, diamond.position.x//blockW)
@@ -190,25 +220,51 @@ class GreedyDiamondLogic(BaseLogic):
             if (temp > bestValue):
                 bestValue = temp
         
-        minimunDiamond = 5 - self.diamonds
-        score = - float("inf")
+        #No diamonds in blocks
+        if (bestValue == 0):
+            self.static_goals.append(self.redButton[0].position)
+            return
+        
+        # Count most valuable block
+        minimunDiamond = 5 - self.board_bot.properties.diamonds
+        currentPosisitionInBlock = (current_position.y - topLeft[0])//blockH, (current_position.x - topLeft[1])//blockW
         for i in range(3):
             for j in range(3):
-                diamondValue = blockAroundValue[i][j] - minimunDiamond
+                #Score jarak hanya akan di berikan ke block yang memiliki diamond
+                if blockAroundValue[i][j] == 0:
+                    continue
 
-                blockMiddle = (topLeft[0] + blockH//2 + i * blockH, topLeft[1] + blockW//2 + j * blockW)
+                #Block tengah
+                jarakBlock = abs(currentPosisitionInBlock[0] - i) + abs(currentPosisitionInBlock[1] - j)
+                if (jarakBlock == 0):
+                    blockAroundValue[i][j] += 5
+                elif (jarakBlock == 1):
+                    blockAroundValue[i][j] += 4
+                elif (jarakBlock == 2):
+                    blockAroundValue[i][j] += 3
+                elif (jarakBlock == 3):
+                    blockAroundValue[i][j] += 2
+                elif (jarakBlock == 4):
+                    blockAroundValue[i][j] += 1
+                
+                #Block yang memiliki diamond lebih dari 5 - current
+                if (blockAroundValue[i][j] < minimunDiamond):
+                    continue
 
-                newScore = 1 / diamondValue * 1 / (abs(current_position.x - blockMiddle[1]) + abs(current_position.y - blockMiddle[0]))
+                #Block yang memiliki diamond lebih dari best value akan dikurangi scorenya
+                #Alasannya ngambil diamond lebih banyak, sama aja ngambil diamond kurang
+                selisih = blockAroundValue[i][j] - minimunDiamond
+                blockAroundValue[i][j] -= selisih
 
-                if (newScore > score):
-                    score = newScore
+        # Find best block
+        score = 0
+        for i in range(3):
+            for j in range(3):
+                if blockAroundValue[i][j] > score:
+                    score = blockAroundValue[i][j]
                     bestBlockIndex = (i,j)
 
-        if (bestValue > 0):
-            self.static_goals = blockAroundDiamonds[bestBlockIndex[0]][bestBlockIndex[1]]
-        else:
-            # print("GAKETEMU LAGI")
-            self.static_goals.append(self.redButton[0].position)
+        self.static_goals = blockAroundDiamonds[bestBlockIndex[0]][bestBlockIndex[1]]
     
     def obstacle_on_path(self, type, current_x, current_y, dest_x, dest_y):
         if type == 'teleporter':
@@ -264,6 +320,7 @@ class GreedyDiamondLogic(BaseLogic):
                         self.goal_position = Position(current_y+1,current_x)
                     else:
                         self.goal_position = Position(current_y-1,current_x)
+                        
                 self.static_temp_goals = Position(self.goal_position.y,self.goal_position.x)
 
             # Kondisi saat redDiamond sejajar dengan current dalam sumbu y dan berada pada jalur current->dest (TIDAK TERPAKAI KARENA TIDAK AKAN PERNAH TERJADI)
