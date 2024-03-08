@@ -59,6 +59,11 @@
 </details>
 
 
+## About The Project
+GREEDY ALGORITM GOES HERE
+<br>
+<br>
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- GETTING STARTED -->
 ## Getting Started
