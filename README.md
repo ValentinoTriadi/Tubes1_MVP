@@ -60,7 +60,7 @@
 
 
 ## About The Project
-GREEDY ALGORITM GOES HERE
+Algoritma greedy yang digunakan untuk menyelesaikan game diamonds akan mencari solusi lokal terbaik pada setiap langkah. Pada setiap iterasi, algoritma akan memilih diamond yang paling menguntungkan berdasarkan kriteria tertentu, seperti jarak terdekat atau jumlah poin yang diberikan. Selain itu, algoritma juga memanfaatkan fitur-fitur tambahan dalam permainan, seperti red button dan teleport, untuk mendapatkan keuntungan yang lebih besar.
 <br>
 <br>
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
