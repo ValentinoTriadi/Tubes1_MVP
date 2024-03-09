@@ -61,6 +61,8 @@
 
 ## About The Project
 Algoritma greedy yang digunakan untuk menyelesaikan game diamonds akan mencari solusi lokal terbaik pada setiap langkah. Pada setiap iterasi, algoritma akan memilih diamond yang paling menguntungkan berdasarkan kriteria tertentu, seperti jarak terdekat atau jumlah poin yang diberikan. Selain itu, algoritma juga memanfaatkan fitur-fitur tambahan dalam permainan, seperti red button dan teleport, untuk mendapatkan keuntungan yang lebih besar.
+
+Algoritma utama yang kita gunakan adalah algoritma DirectAttack yang terdapat pada file game/logic/direct_attack.py 
 <br>
 <br>
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -99,7 +101,7 @@ Algoritma greedy yang digunakan untuk menyelesaikan game diamonds akan mencari s
 5. Run bot
   For 1 bot:
   ```sh
-  python main.py --logic Random --email=your_email@example.com --name=your_name --password=your_password --team etimo
+  python main.py --logic DirectAttack --email=your_email@example.com --name=your_name --password=your_password --team etimo
   ```
   For running more than 1 bots:
   
