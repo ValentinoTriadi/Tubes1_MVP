@@ -11,15 +11,17 @@ from game.logic.base import BaseLogic
 from game.logic.tackle import TackleLogic
 from game.logic.block import GreedyDiamondLogic
 from game.logic.direct import GreedyDiamondLogic
+from game.logic.jojo import mixbanyakattack
 
 init()
 BASE_URL = "http://localhost:3000/api"
-DEFAULT_BOARD_ID = 4
+DEFAULT_BOARD_ID = 1
 CONTROLLERS = {
     "Random": RandomLogic,
     "Block": GreedyDiamondLogic,
     "Tackle": TackleLogic,
     "Direct" : GreedyDiamondLogic,
+    "Jojo" : mixbanyakattack
 }
 
 ###############################################################################

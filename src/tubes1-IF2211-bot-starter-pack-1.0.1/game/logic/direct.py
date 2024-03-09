@@ -16,6 +16,7 @@ class GreedyDiamondLogic(BaseLogic):
     static_goals : list[Position] = []
     static_goal_teleport : GameObject = None
     static_temp_goals : Position = None
+    static_direct_to_base_via_teleporter : bool = False
 
     def __init__(self) -> None:
         self.directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]
@@ -33,7 +34,13 @@ class GreedyDiamondLogic(BaseLogic):
         self.redButton = [d for d in self.board.game_objects if d.type == "DiamondButtonGameObject"]
         self.enemy = [d for d in self.bots if d.id != self.board_bot.id]
         self.enemyDiamond = [d.properties.diamonds for d in self.enemy]
-        
+
+        # REMOVE ALL STATIC WHEN IN BASE
+        if (self.board_bot.position == self.board_bot.properties.base):
+            self.static_goals = []
+            self.static_goal_teleport = None
+            self.static_temp_goals = None
+            self.static_direct_to_base_via_teleporter = False
 
         # REMOVE STATIC GOALS IN TELEPORT
         if (self.static_goal_teleport and self.board_bot.position == self.find_other_teleport(self.static_goal_teleport)):
@@ -49,8 +56,10 @@ class GreedyDiamondLogic(BaseLogic):
         # Analyze new state
         if props.diamonds == 5 or (props.milliseconds_left < 5000 and props.diamonds > 1):
             # Move to base
-            base = board_bot.properties.base
-            self.goal_position = base
+            self.goal_position = self.find_best_way_to_base()
+            if not self.static_direct_to_base_via_teleporter:
+                self.static_goals = []
+                self.static_goal_teleport = None
         else:
             if (len(self.static_goals) == 0):
                 self.find_nearest_diamond()
@@ -58,10 +67,10 @@ class GreedyDiamondLogic(BaseLogic):
     
 
         if (self.calculate_near_base() and props.diamonds > 2):
-            base = board_bot.properties.base
-            self.goal_position = base
-            self.static_goal_teleport = None
-            self.static_goals = []
+            self.goal_position = self.find_best_way_to_base()
+            if not self.static_direct_to_base_via_teleporter:
+                self.static_goals = []
+                self.static_goal_teleport = None
 
         if self.static_temp_goals: # If there is a temp goal, use it
             self.goal_position = self.static_temp_goals
@@ -109,11 +118,29 @@ class GreedyDiamondLogic(BaseLogic):
         if (delta_x == 0 and delta_y == 0):
             # Reset goal
             self.static_goals = []
+            self.static_direct_to_base_via_teleporter = False
+            self.static_goal_teleport = None
+            self.static_temp_goals = None
             self.goal_position = None
             tempMove = self.next_move(board_bot, board)
             delta_x, delta_y = tempMove[0], tempMove[1]
 
         return delta_x, delta_y
+    
+    def find_best_way_to_base(self):
+        current_position = self.board_bot.position
+        base = self.board_bot.properties.base
+        base_position = Position(base.y, base.x)
+        base_distance_direct = abs(base.x - current_position.x) + abs(base.y - current_position.y)
+        nearest_teleport_position, far_teleport_position, nearest_tp = self.find_nearest_teleport()
+        base_distance_teleporter = abs(base.x - far_teleport_position.x) + abs(base.y - far_teleport_position.y) + abs(nearest_teleport_position.x - current_position.x) + abs(nearest_teleport_position.y - current_position.y)
+        if (base_distance_direct < base_distance_teleporter):
+            return base_position
+        else:
+            self.static_direct_to_base_via_teleporter = True
+            self.static_goal_teleport = nearest_tp
+            self.static_goals = [nearest_teleport_position, base]
+            return nearest_teleport_position
     
     def calculate_near_base(self):
         current_position = self.board_bot.position
@@ -122,6 +149,13 @@ class GreedyDiamondLogic(BaseLogic):
         base_distance_teleporter = self.find_base_distance_teleporter()
         distance = base_distance_teleporter if base_distance_teleporter < base_distance else base_distance
         return distance < self.distance
+
+    def find_base_distance_teleporter(self):
+        current_position = self.board_bot.position
+        nearest_teleport_position, far_teleport_position, nearest_teleport = self.find_nearest_teleport()
+        base = self.board_bot.properties.base
+        base_distance_teleporter = abs(base.x - far_teleport_position.x) + abs(base.y - far_teleport_position.y) + abs(nearest_teleport_position.x - current_position.x) + abs(nearest_teleport_position.y - current_position.y)
+        return base_distance_teleporter    
 
     def find_nearest_diamond(self) -> Optional[Position]:
         direct = self.find_nearest_diamond_direct() # distance, position
@@ -137,7 +171,6 @@ class GreedyDiamondLogic(BaseLogic):
         else:
             self.static_goals = [redButton[1]]
             self.distance = redButton[0]
-    
 
     def find_nearest_red_button(self):
         current_position = self.board_bot.position
@@ -271,10 +304,4 @@ class GreedyDiamondLogic(BaseLogic):
             #     print("TARGET PINDAH")
             #     print(self.static_temp_goals)
         
-    def find_base_distance_teleporter(self):
-        current_position = self.board_bot.position
-        nearest_teleport_position, far_teleport_position, nearest_teleport = self.find_nearest_teleport()
-        base = self.board_bot.properties.base
-        base_distance_teleporter = abs(base.x - far_teleport_position.x) + abs(base.y - far_teleport_position.y) + abs(nearest_teleport_position.x - current_position.x) + abs(nearest_teleport_position.y - current_position.y)
-        return base_distance_teleporter
     
