@@ -244,10 +244,6 @@ class GreedyDiamondLogic(BaseLogic):
                     else:
                         self.goal_position = Position(dest_y,dest_x-1)
                 self.static_temp_goals = self.goal_position
-                print("POSISI IF")
-                print(current_x, current_y)
-                print("TARGET PINDAH")
-                print(self.static_temp_goals)
 
             # Kondisi saat redDiamond sejajar dengan destinasi dalam sumbu x dan berada pada jalur current->dest (Tidak akan pernah terjadi)
             elif t.position.y == dest_y and (dest_x < t.position.x <= current_x or current_x <= t.position.x < dest_x):
@@ -265,10 +261,6 @@ class GreedyDiamondLogic(BaseLogic):
                         self.goal_position = Position(dest_y-1,dest_x)
 
                 self.static_temp_goals = self.goal_position
-                print("POSISI ELIF 1")
-                print(current_x, current_y)
-                print("TARGET PINDAH")
-                print(self.static_temp_goals)
                         
             # Kondisi saat redDiamond sejajar dengan current dalam sumbu x dan berada pada jalur current->dest
             elif t.position.y == current_y and (dest_x < t.position.x <= current_x or current_x <= t.position.x < dest_x): 
@@ -286,22 +278,5 @@ class GreedyDiamondLogic(BaseLogic):
                         self.goal_position = Position(current_y-1,current_x)
                         
                 self.static_temp_goals = self.goal_position
-                print("POSISI ELIF 2")
-                print(current_x, current_y)
-                print("TARGET PINDAH")
-                print(self.static_temp_goals)
-
-            # Kondisi saat redDiamond sejajar dengan current dalam sumbu y dan berada pada jalur current->dest (TIDAK TERPAKAI KARENA TIDAK AKAN PERNAH TERJADI)
-            # elif t.position.x == current_x and (dest_y < t.position.y <= current_y or current_y <= t.position.y < dest_y):
-            #     if (current_x <= 1):
-            #         self.goal_position = Position(dest_y,current_x+1)
-            #     else:
-            #         self.goal_position = Position(dest_y,current_x-1)
-
-            #     self.static_temp_goals = self.goal_position
-            #     print("POSISI ELIF 3")
-            #     print(current_x, current_y)
-            #     print("TARGET PINDAH")
-            #     print(self.static_temp_goals)
         
     
