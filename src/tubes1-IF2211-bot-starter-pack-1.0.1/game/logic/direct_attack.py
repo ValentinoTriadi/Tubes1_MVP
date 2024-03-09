@@ -76,7 +76,7 @@ class GreedyDiamondLogic(BaseLogic):
             self.goal_position = self.static_temp_goals
 
         # Attack bot lain
-            current_position = board_bot.position
+        current_position = board_bot.position
         if self.enemy and props.diamonds < 3:
             self.enemy.sort(key=lambda bot: abs(bot.position.x - current_position.x) + abs(bot.position.y - current_position.y), reverse=True)
             goal_distance = abs(self.goal_position.x - current_position.x) + abs(self.goal_position.y - current_position.y)
