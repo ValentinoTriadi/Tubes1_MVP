@@ -75,7 +75,8 @@ class GreedyDiamondLogic(BaseLogic):
         if self.static_temp_goals: # If there is a temp goal, use it
             self.goal_position = self.static_temp_goals
 
-                # Attack bot lain
+        # Attack bot lain
+            current_position = board_bot.position
         if self.enemy and props.diamonds < 3:
             self.enemy.sort(key=lambda bot: abs(bot.position.x - current_position.x) + abs(bot.position.y - current_position.y), reverse=True)
             goal_distance = abs(self.goal_position.x - current_position.x) + abs(self.goal_position.y - current_position.y)
@@ -85,7 +86,6 @@ class GreedyDiamondLogic(BaseLogic):
                 self.goal_position = nearest_enemy.position
 
         # Calculate next move
-        current_position = board_bot.position
         if self.goal_position:
             # Check if there is a teleporter on the path
             if (not self.static_temp_goals):
