@@ -62,7 +62,7 @@
 ## About The Project
 The greedy algorithm used to solve the diamond game seeks the best local solution at each step. In each iteration, the algorithm selects the most advantageous diamond based on certain criteria, such as closest distance or the number of points it offers. Additionally, the algorithm leverages additional features within the game, such as red buttons and teleporters, to gain even greater advantages.
 
-The main algorithm that we use is the DirectAttack algorithm located in the file game/logic/direct_attack.py
+The main algorithm we use is the ```DirectAttack``` algorithm that can be found in ```game/logic/direct_attack.py``` file
 <br>
 <br>
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
