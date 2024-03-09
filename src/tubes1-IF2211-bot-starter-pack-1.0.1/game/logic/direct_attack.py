@@ -2,7 +2,6 @@ from typing import Optional
 from game.logic.base import BaseLogic
 from game.models import Board, GameObject, Position
 from game.util import get_direction
-import time
 
 
 # LIST OF IMPROVEMENTS
@@ -76,10 +75,7 @@ class GreedyDiamondLogic(BaseLogic):
         if self.static_temp_goals: # If there is a temp goal, use it
             self.goal_position = self.static_temp_goals
 
-        # Calculate next move
-        current_position = board_bot.position
-        
-        # Attack bot lain
+                # Attack bot lain
         if self.enemy and props.diamonds < 3:
             self.enemy.sort(key=lambda bot: abs(bot.position.x - current_position.x) + abs(bot.position.y - current_position.y), reverse=True)
             goal_distance = abs(self.goal_position.x - current_position.x) + abs(self.goal_position.y - current_position.y)
@@ -88,6 +84,8 @@ class GreedyDiamondLogic(BaseLogic):
             if nearest_enemy.properties.diamonds > 2 and bot_distance < goal_distance:
                 self.goal_position = nearest_enemy.position
 
+        # Calculate next move
+        current_position = board_bot.position
         if self.goal_position:
             # Check if there is a teleporter on the path
             if (not self.static_temp_goals):
@@ -136,15 +134,22 @@ class GreedyDiamondLogic(BaseLogic):
             tempMove = self.next_move(board_bot, board)
             delta_x, delta_y = tempMove[0], tempMove[1]
 
-        #print processing time in ms
         return delta_x, delta_y
     
+    #Calculate the best way to base
     def find_best_way_to_base(self):
         current_position = self.board_bot.position
         base = self.board_bot.properties.base
         base_position = Position(base.y, base.x)
+
+        # Calculate distance to base with direct and teleporter
         base_distance_direct = abs(base.x - current_position.x) + abs(base.y - current_position.y)
         nearest_teleport_position, far_teleport_position, nearest_tp = self.find_nearest_teleport()
+
+        if (nearest_teleport_position == None and far_teleport_position == None):
+            return base_position
+
+        # Find the best way to base
         base_distance_teleporter = abs(base.x - far_teleport_position.x) + abs(base.y - far_teleport_position.y) + abs(nearest_teleport_position.x - current_position.x) + abs(nearest_teleport_position.y - current_position.y)
         if (base_distance_direct < base_distance_teleporter):
             return base_position
@@ -157,14 +162,26 @@ class GreedyDiamondLogic(BaseLogic):
     def calculate_near_base(self):
         current_position = self.board_bot.position
         base = self.board_bot.properties.base
+
+        # Calculate distance to base with direct and teleporter
         base_distance = abs(base.x - current_position.x) + abs(base.y - current_position.y)
         base_distance_teleporter = self.find_base_distance_teleporter()
         distance = base_distance_teleporter if base_distance_teleporter < base_distance else base_distance
+
+        if (distance == 0):
+            return False
+        
         return distance < self.distance
 
     def find_base_distance_teleporter(self):
         current_position = self.board_bot.position
+
+        # Calculate distance to base with teleporter
         nearest_teleport_position, far_teleport_position, nearest_teleport = self.find_nearest_teleport()
+
+        if (nearest_teleport_position == None and far_teleport_position == None and nearest_teleport == None):
+            return float("inf")
+
         base = self.board_bot.properties.base
         base_distance_teleporter = abs(base.x - far_teleport_position.x) + abs(base.y - far_teleport_position.y) + abs(nearest_teleport_position.x - current_position.x) + abs(nearest_teleport_position.y - current_position.y)
         return base_distance_teleporter    
@@ -183,33 +200,45 @@ class GreedyDiamondLogic(BaseLogic):
         else:
             self.static_goals = [redButton[1]]
             self.distance = redButton[0]
-
+    
+    # Find the nearest red button
     def find_nearest_red_button(self):
         current_position = self.board_bot.position
         distance = abs(self.redButton[0].position.x - current_position.x) + abs(self.redButton[0].position.y - current_position.y)
         return distance, self.redButton[0].position
 
+    # Find the nearest teleport
     def find_nearest_teleport(self):
         nearest_teleport_position, far_teleport_position, nearest_tp = None, None, None
         min_distance = float("inf")
         for teleport in self.teleporter:
             distance = abs(teleport.position.x - self.board_bot.position.x) + abs(teleport.position.y - self.board_bot.position.y)
+            if distance == 0:
+                return None, None, None
             if distance < min_distance:
                 min_distance = distance
                 nearest_teleport_position,far_teleport_position = teleport.position, self.find_other_teleport(teleport)
                 nearest_tp = teleport
         return nearest_teleport_position,far_teleport_position, nearest_tp
     
+    # Find the other teleport
     def find_other_teleport(self, teleport: GameObject):
         for t in self.teleporter:
             if t.id != teleport.id:
                 return t.position
-
+            
+    # Find the nearest diamond with teleport
     def find_nearest_diamond_teleport(self) -> Optional[Position]:
         current_position = self.board_bot.position
         nearest_teleport_position, far_teleport_position, nearest_teleport = self.find_nearest_teleport()
+
+        if (nearest_teleport_position == None and far_teleport_position == None and nearest_teleport == None):
+            return float("inf")
+    
         min_distance = float("inf")
         nearest_diamond = None
+
+        # Calculate distance to diamond with teleport
         for diamond in self.diamonds:
             distance = abs(diamond.position.x - far_teleport_position.x) + abs(diamond.position.y - far_teleport_position.y) + abs(nearest_teleport_position.x - current_position.x) + abs(nearest_teleport_position.y - current_position.y)
             distance /= diamond.properties.points
@@ -218,6 +247,7 @@ class GreedyDiamondLogic(BaseLogic):
                 nearest_diamond = [nearest_teleport_position, diamond.position]
         return min_distance, nearest_diamond, nearest_teleport
     
+    # Find the nearest diamond with direct
     def find_nearest_diamond_direct(self) -> Optional[Position]:
         current_position = self.board_bot.position
         min_distance = float("inf")
