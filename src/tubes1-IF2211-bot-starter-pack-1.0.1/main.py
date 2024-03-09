@@ -9,19 +9,19 @@ from game.logic.random import RandomLogic
 from game.util import *
 from game.logic.base import BaseLogic
 from game.logic.tackle import TackleLogic
-from game.logic.block import GreedyDiamondLogic
-from game.logic.direct import GreedyDiamondLogic
-from game.logic.jojo import mixbanyakattack
+import game.logic.block as block
+import game.logic.direct as direct
+import game.logic.direct_attack as direct_attack
 
 init()
 BASE_URL = "http://localhost:3000/api"
 DEFAULT_BOARD_ID = 1
 CONTROLLERS = {
     "Random": RandomLogic,
-    "Block": GreedyDiamondLogic,
+    "Block": block.GreedyDiamondLogic,
     "Tackle": TackleLogic,
-    "Direct" : GreedyDiamondLogic,
-    "Jojo" : mixbanyakattack
+    "Direct": direct.GreedyDiamondLogic,
+    "DirectAttack": direct_attack.GreedyDiamondLogic,
 }
 
 ###############################################################################
@@ -211,7 +211,7 @@ while True:
 
     # Don't spam the board more than it allows!
     # sleep(move_delay * time_factor)
-    sleep(0.1)
+    sleep(1)
 
 
 ###############################################################################
